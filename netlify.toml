@@ -1,0 +1,11 @@
+# Site estático — publica a pasta "site"
+[build]
+  publish = "site"
+  command = ""
+
+# Arquivos de planilha nunca são publicados
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

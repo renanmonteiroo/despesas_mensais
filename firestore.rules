@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// FinControl — cada usuário só enxerga os próprios dados.
+// Cole no Console do Firebase → Firestore Database → Regras.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Perfil, lançamentos e categorias do usuário autenticado
+    match /usuarios/{uid}/{doc=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // Tudo o mais: negado
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

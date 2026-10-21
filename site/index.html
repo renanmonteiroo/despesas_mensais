@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>RM_Controle_Financeiro · Controle Financeiro Mensal Pessoal</title>
+<meta name="description" content="Sistema gratuito de controle de despesas e receitas mensais com login, painel, gráficos e sincronização em nuvem.">
+<meta name="theme-color" content="#0f172a">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ============================ TOASTS ============================ -->
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<!-- ============================ AUTENTICAÇÃO ============================ -->
+<div id="authView" class="auth">
+  <section class="auth__hero">
+    <div class="auth__hero-inner">
+      <div class="brand brand--lg">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 5-7"/><path d="M14 7h4v4"/></svg>
+        </span>
+        <span class="brand__name">Controle_Financeiro</span>
+      </div>
+
+      <h1 class="auth__title">Suas despesas e receitas mensais, <em>no controle.</em></h1>
+      <p class="auth__sub">Um sistema gratuito para registrar lançamentos, acompanhar o saldo do mês e ver para onde o seu dinheiro vai — de qualquer dispositivo.</p>
+
+      <ul class="auth__feats">
+        <li><span class="dot dot--green"></span> Painel com receitas, despesas, saldo e taxa de poupança</li>
+        <li><span class="dot dot--blue"></span> Gráficos mensais e resumo por categoria</li>
+        <li><span class="dot dot--purple"></span> Login e recuperação de senha pelo e-mail</li>
+        <li><span class="dot dot--amber"></span> Importe sua planilha .xlsx e exporte em CSV</li>
+      </ul>
+
+      <div class="auth__quote">
+        <p>“Registre cada movimentação, atualize os meses e deixe o painel calcular os totais por você.”</p>
+        <span>Guia rápido do sistema</span>
+      </div>
+    </div>
+    <div class="auth__glow" aria-hidden="true"></div>
+  </section>
+
+  <main class="auth__panel">
+    <div class="auth__card">
+      <div class="auth__tabs" role="tablist">
+        <button class="auth__tab is-active" data-authtab="login" role="tab">Entrar</button>
+        <button class="auth__tab" data-authtab="cadastro" role="tab">Criar conta</button>
+        <button class="auth__tab" data-authtab="recuperar" role="tab">Recuperar senha</button>
+      </div>
+
+      <!-- LOGIN -->
+      <form id="formLogin" class="auth__form" novalidate>
+        <h2>Bem-vindo de volta</h2>
+        <p class="muted">Entre para acessar os seus lançamentos.</p>
+        <label class="field">
+          <span>E-mail</span>
+          <input type="email" name="email" autocomplete="email" placeholder="voce@email.com" required>
+        </label>
+        <label class="field">
+          <span>Senha</span>
+          <div class="field__pw">
+            <input type="password" name="senha" autocomplete="current-password" placeholder="••••••••" minlength="6" required>
+            <button type="button" class="pw-toggle" aria-label="Mostrar senha">Mostrar</button>
+          </div>
+        </label>
+        <label class="check">
+          <input type="checkbox" name="lembrar" checked>
+          <span>Manter conectado neste dispositivo</span>
+        </label>
+        <button class="btn btn--primary btn--block" type="submit">Entrar</button>
+        <p class="auth__hint">Ainda não tem conta? <a href="#" data-goto="cadastro">Criar agora</a></p>
+      </form>
+
+      <!-- CADASTRO -->
+      <form id="formCadastro" class="auth__form is-hidden" novalidate>
+        <h2>Crie a sua conta</h2>
+        <p class="muted">Grátis para sempre — sem cartão de crédito.</p>
+        <label class="field">
+          <span>Nome</span>
+          <input type="text" name="nome" autocomplete="name" placeholder="Seu nome" required minlength="2">
+        </label>
+        <label class="field">
+          <span>E-mail</span>
+          <input type="email" name="email" autocomplete="email" placeholder="voce@email.com" required>
+        </label>
+        <label class="field">
+          <span>Senha</span>
+          <div class="field__pw">
+            <input type="password" name="senha" autocomplete="new-password" placeholder="mínimo 6 caracteres" minlength="6" required>
+            <button type="button" class="pw-toggle" aria-label="Mostrar senha">Mostrar</button>
+          </div>
+          <small class="field__help">Use ao menos 6 caracteres.</small>
+        </label>
+        <label class="check">
+          <input type="checkbox" name="termos" required>
+          <span>Li e concordo em usar o sistema para fins pessoais.</span>
+        </label>
+        <button class="btn btn--primary btn--block" type="submit">Criar conta</button>
+        <p class="auth__hint">Já tem conta? <a href="#" data-goto="login">Entrar</a></p>
+      </form>
+
+      <!-- RECUPERAR -->
+      <form id="formRecuperar" class="auth__form is-hidden" novalidate>
+        <h2>Recuperar senha</h2>
+        <p class="muted">Enviaremos um link de redefinição para o seu e-mail.</p>
+        <label class="field">
+          <span>E-mail</span>
+          <input type="email" name="email" autocomplete="email" placeholder="voce@email.com" required>
+        </label>
+        <button class="btn btn--primary btn--block" type="submit">Enviar link</button>
+        <p class="auth__hint"><a href="#" data-goto="login">Voltar para o login</a></p>
+      </form>
+
+      <div class="auth__badge" id="modeBadge">…</div>
+    </div>
+  </main>
+</div>
+
+<!-- ============================ APLICAÇÃO ============================ -->
+<div id="appView" class="app is-hidden">
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar__head">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 3 5-7"/><path d="M14 7h4v4"/></svg>
+        </span>
+        <span class="brand__name">Controle_Financeiro</span>
+      </div>
+      <button class="icon-btn sidebar__close" id="btnCloseSidebar" aria-label="Fechar menu">✕</button>
+    </div>
+
+    <nav class="sidebar__nav">
+      <p class="sidebar__label">Visão geral</p>
+      <a class="navitem is-active" href="#/painel" data-nav="painel">
+        <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3zM13 21h8V11h-8zM3 21h8v-6H3zM13 9h8V3h-8z"/></svg>
+        <span>Painel</span>
+      </a>
+      <p class="sidebar__label">Movimentação</p>
+      <a class="navitem" href="#/lancamentos" data-nav="lancamentos">
+        <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        <span>Lançamentos</span>
+      </a>
+      <a class="navitem" href="#/categorias" data-nav="categorias">
+        <svg viewBox="0 0 24 24"><path d="M20.6 13.4L12 4.8A2 2 0 0010.6 4H5a1 1 0 00-1 1v5.6a2 2 0 00.6 1.4l8.6 8.6a2 2 0 002.8 0l4.6-4.6a2 2 0 000-2.6z"/><circle cx="8" cy="8" r="1.2"/></svg>
+        <span>Categorias</span>
+      </a>
+      <a class="navitem" href="#/importar" data-nav="importar">
+        <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
+        <span>Importar / Exportar</span>
+      </a>
+      <p class="sidebar__label">Conta</p>
+      <a class="navitem" href="#/config" data-nav="config">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.9l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.9-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1A1.7 1.7 0 008.9 19a1.7 1.7 0 00-1.9.4l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.9 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1A1.7 1.7 0 004.6 8.9a1.7 1.7 0 00-.4-1.9l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.9.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.9-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.9V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>
+        <span>Configurações</span>
+      </a>
+    </nav>
+
+    <div class="sidebar__foot">
+      <div class="userchip">
+        <span class="avatar" id="avatarLetter">U</span>
+        <span class="userchip__txt">
+          <strong id="userName">Usuário</strong>
+          <small id="userEmail">—</small>
+        </span>
+      </div>
+      <button class="btn btn--ghost btn--block" id="btnSair">Sair</button>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <div class="shell">
+    <header class="topbar">
+      <button class="icon-btn topbar__menu" id="btnOpenSidebar" aria-label="Abrir menu">
+        <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div class="topbar__title">
+        <h1 id="pageTitle">Painel</h1>
+        <p id="pageSubtitle">Visão geral das suas finanças</p>
+      </div>
+      <div class="topbar__actions">
+        <label class="select select--sm">
+          <span class="sr-only">Competência</span>
+          <select id="selectComp"></select>
+        </label>
+        <button class="icon-btn" id="btnTheme" title="Alternar tema" aria-label="Alternar tema">
+          <svg class="ico-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <svg class="ico-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1111.2 3a7 7 0 009.8 9.8z"/></svg>
+        </button>
+        <button class="btn btn--primary btn--sm" id="btnNovoTopo">
+          <span aria-hidden="true">+</span> <span class="btn--novo-label">Novo lançamento</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="content">
+
+      <!-- ---------------- PAINEL ---------------- -->
+      <section class="view" id="view-painel">
+
+        <div class="card welcome" id="welcome">
+          <div class="welcome__ico">📘</div>
+          <div class="welcome__txt">
+            <h2>Bem-vindo ao RM_Controle_Financeiro!</h2>
+            <p>Sua conta está vazia. Traga os lançamentos da sua planilha <strong>Controle_Financeiro_Profissional.xlsx</strong> em
+              <a href="#/importar">Importar / Exportar</a> — o arquivo é lido no seu navegador e não é publicado em lugar nenhum.</p>
+          </div>
+          <div class="welcome__acts">
+            <a class="btn btn--primary btn--sm" href="#/importar">Importar planilha</a>
+            <button class="btn btn--soft btn--sm" data-exemplo>Dados de exemplo</button>
+          </div>
+        </div>
+
+        <div class="kpis" id="kpis"></div>
+
+        <div class="grid grid--2">
+          <div class="card">
+            <div class="card__head">
+              <div>
+                <h2>Fluxo mensal</h2>
+                <p class="muted" id="chartFluxoSub">Receitas × despesas nos últimos 12 meses</p>
+              </div>
+              <div class="legend">
+                <span class="legend__i"><i class="sw sw--green"></i>Receitas</span>
+                <span class="legend__i"><i class="sw sw--red"></i>Despesas</span>
+                <span class="legend__i"><i class="sw sw--blue"></i>Saldo</span>
+              </div>
+            </div>
+            <div class="chart"><canvas id="chartFluxo"></canvas></div>
+          </div>
+
+          <div class="card">
+            <div class="card__head">
+              <div>
+                <h2>Para onde vai o dinheiro</h2>
+                <p class="muted" id="chartCatSub">Despesas por categoria</p>
+              </div>
+            </div>
+            <div class="chart chart--donut"><canvas id="chartCategorias"></canvas></div>
+            <div class="catlist" id="catList"></div>
+          </div>
+        </div>
+
+        <div class="grid grid--2">
+          <div class="card">
+            <div class="card__head">
+              <h2>Últimos lançamentos</h2>
+              <a class="link" href="#/lancamentos">Ver todos</a>
+            </div>
+            <div class="rows" id="ultimosList"></div>
+          </div>
+
+          <div class="card">
+            <div class="card__head">
+              <h2>Pendências</h2>
+              <span class="pill pill--warn" id="pendCount">0</span>
+            </div>
+            <div class="rows" id="pendList"></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head">
+            <div>
+              <h2>Resumo anual por categoria</h2>
+              <p class="muted" id="resumoSub">Totais do ano de referência</p>
+            </div>
+            <button class="btn btn--soft btn--sm" id="btnExportResumo">Exportar CSV</button>
+          </div>
+          <div class="table-wrap">
+            <table class="table table--bar" id="tabelaResumo">
+              <thead>
+                <tr><th>Categoria</th><th>Tipo</th><th class="num">Total anual</th><th class="w40">Participação</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- LANÇAMENTOS ---------------- -->
+      <section class="view is-hidden" id="view-lancamentos">
+        <div class="card">
+          <div class="toolbar">
+            <div class="toolbar__search">
+              <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+              <input type="search" id="filtroBusca" placeholder="Buscar por descrição, categoria ou observação…">
+            </div>
+            <div class="toolbar__filters">
+              <select id="filtroTipo" class="select">
+                <option value="">Todos os tipos</option>
+                <option>Receita</option>
+                <option>Despesa</option>
+                <option>Transferência</option>
+              </select>
+              <select id="filtroCategoria" class="select"><option value="">Todas as categorias</option></select>
+              <select id="filtroSituacao" class="select">
+                <option value="">Todas as situações</option>
+                <option>Pago</option><option>Recebido</option><option>Pendente</option><option>Cancelado</option>
+              </select>
+              <button class="btn btn--soft btn--sm" id="btnLimparFiltros">Limpar</button>
+            </div>
+          </div>
+
+          <div class="chips" id="resumoChips"></div>
+
+          <div class="table-wrap">
+            <table class="table" id="tabelaLanc">
+              <thead>
+                <tr>
+                  <th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th>
+                  <th class="num">Valor</th><th>Situação</th><th class="th-acoes">Ações</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+            <div class="empty is-hidden" id="lancEmpty">
+              <div class="empty__ico">🗒️</div>
+              <h2>Nenhum lançamento encontrado</h2>
+              <p>Ajuste os filtros ou registre o primeiro lançamento do mês.</p>
+              <button class="btn btn--primary" data-novo>+ Novo lançamento</button>
+            </div>
+          </div>
+
+          <div class="pager" id="pager"></div>
+        </div>
+      </section>
+
+      <!-- ---------------- CATEGORIAS ---------------- -->
+      <section class="view is-hidden" id="view-categorias">
+        <div class="grid grid--2">
+          <div class="card">
+            <div class="card__head"><h2>Nova categoria</h2></div>
+            <form id="formCategoria" class="form-grid">
+              <label class="field"><span>Nome</span><input name="nome" placeholder="Ex.: Mercado" required maxlength="40"></label>
+              <label class="field"><span>Tipo</span>
+                <select name="tipo" class="select"><option>Despesa</option><option>Receita</option><option>Ambos</option></select>
+              </label>
+              <label class="field"><span>Cor</span><input name="cor" type="color" value="#6366f1" class="color"></label>
+              <button class="btn btn--primary" type="submit">Adicionar</button>
+            </form>
+            <p class="muted note">Categorias ficam salvas apenas na sua conta e aparecem no formulário de lançamentos.</p>
+          </div>
+          <div class="card">
+            <div class="card__head"><h2>Minhas categorias</h2><span class="pill" id="catCount">0</span></div>
+            <div class="tags" id="tagsCategorias"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- IMPORTAR / EXPORTAR ---------------- -->
+      <section class="view is-hidden" id="view-importar">
+        <div class="grid grid--2">
+          <div class="card">
+            <div class="card__head"><div><h2>Importar planilha</h2><p class="muted">Aceita .xlsx, .csv ou .json exportado da sua planilha.</p></div></div>
+            <div class="drop" id="dropZone">
+              <div class="drop__ico">⬆️</div>
+              <p><strong>Arraste o arquivo aqui</strong> ou clique para selecionar</p>
+              <p class="muted small">Colunas esperadas: Data · Tipo · Categoria · Descrição · Valor (R$) · Situação · Observações</p>
+              <input type="file" id="fileInput" accept=".xlsx,.xls,.csv,.json" hidden>
+              <div class="drop__btns">
+                <button class="btn btn--primary" id="btnEscolherArquivo" type="button">Selecionar arquivo</button>
+                <button class="btn btn--soft" id="btnCarregarExemplo" type="button">Carregar dados de exemplo</button>
+              </div>
+            </div>
+            <div class="preview is-hidden" id="importPreview">
+              <div class="preview__head">
+                <strong id="previewTitle">Pré-visualização</strong>
+                <span class="pill" id="previewCount">0 linhas</span>
+              </div>
+              <div class="table-wrap"><table class="table table--sm"><thead><tr><th>Data</th><th>Tipo</th><th>Categoria</th><th>Descrição</th><th class="num">Valor</th></tr></thead><tbody id="previewBody"></tbody></table></div>
+              <div class="preview__actions">
+                <label class="check"><input type="checkbox" id="chkDuplicados"><span>Ignorar lançamentos já existentes</span></label>
+                <button class="btn btn--primary" id="btnConfirmarImport">Importar lançamentos</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><div><h2>Exportar dados</h2><p class="muted">Baixe tudo para guardar uma cópia ou reutilizar na planilha.</p></div></div>
+            <div class="stack">
+              <div class="opt">
+                <div><strong>CSV (Excel / LibreOffice)</strong><p class="muted small">Lançamentos com separador “;” e acentuação UTF-8.</p></div>
+                <button class="btn btn--soft btn--sm" id="btnExportCsv">Baixar CSV</button>
+              </div>
+              <div class="opt">
+                <div><strong>JSON (backup completo)</strong><p class="muted small">Lançamentos + categorias no formato do sistema.</p></div>
+                <button class="btn btn--soft btn--sm" id="btnExportJson">Baixar JSON</button>
+              </div>
+              <div class="opt">
+                <div><strong>Resumo anual por categoria</strong><p class="muted small">Totais consolidados do ano de referência.</p></div>
+                <button class="btn btn--soft btn--sm" id="btnExportResumo2">Baixar CSV</button>
+              </div>
+            </div>
+            <div class="warnbox">
+              <strong>Dica de segurança</strong>
+              <p>Sua planilha original (<code>Controle_Financeiro_Profissional.xlsx</code>) contém dados pessoais. Importe pelo navegador — o arquivo não é publicado na internet — e não suba a planilha para a pasta do site.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- CONFIGURAÇÕES ---------------- -->
+      <section class="view is-hidden" id="view-config">
+        <div class="grid grid--2">
+          <div class="card">
+            <div class="card__head"><h2>Perfil</h2></div>
+            <form id="formPerfil" class="form-grid">
+              <label class="field"><span>Nome</span><input name="nome" required maxlength="60"></label>
+              <label class="field"><span>E-mail</span><input name="email" readonly disabled></label>
+              <button class="btn btn--primary" type="submit">Salvar alterações</button>
+            </form>
+            <div class="opt opt--sep">
+              <div><strong>Sair da conta</strong><p class="muted small">Encerra a sessão neste dispositivo.</p></div>
+              <button class="btn btn--soft btn--sm" id="btnSair2">Sair</button>
+            </div>
+            <div class="opt opt--sep opt--danger">
+              <div><strong>Apagar todos os meus dados</strong><p class="muted small">Remove definitivamente lançamentos e categorias da sua conta.</p></div>
+              <button class="btn btn--danger btn--sm" id="btnApagar">Apagar</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><h2>Sistema</h2></div>
+            <div class="stack">
+              <div class="opt">
+                <div><strong>Aparência</strong><p class="muted small">Tema claro ou escuro.</p></div>
+                <div class="seg" id="segTema">
+                  <button class="seg__b is-active" data-theme-set="light">Claro</button>
+                  <button class="seg__b" data-theme-set="dark">Escuro</button>
+                </div>
+              </div>
+              <div class="opt">
+                <div><strong>Ano de referência</strong><p class="muted small">Usado no resumo anual.</p></div>
+                <select class="select select--sm" id="selectAno"></select>
+              </div>
+            </div>
+            <div class="infobox">
+              <div class="opt">
+                <div><strong>Modo de armazenamento</strong><p class="muted small" id="storageDesc">—</p></div>
+                <span class="pill" id="storagePill">—</span>
+              </div>
+              <div class="opt">
+                <div><strong>Totais da conta</strong><p class="muted small" id="contaTotais">—</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ============================ MODAL LANÇAMENTO ============================ -->
+<div class="modal" id="modalLanc" aria-hidden="true">
+  <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal__head">
+      <h3 id="modalTitle">Novo lançamento</h2>
+      <button class="icon-btn" data-close aria-label="Fechar">✕</button>
+    </div>
+    <form id="formLanc" class="modal__body form-grid" novalidate>
+      <div class="seg seg--tipo" id="segTipo">
+        <button type="button" class="seg__b is-active" data-tipo="Despesa">Despesa</button>
+        <button type="button" class="seg__b" data-tipo="Receita">Receita</button>
+        <button type="button" class="seg__b" data-tipo="Transferência">Transferência</button>
+      </div>
+      <div class="row2">
+        <label class="field"><span>Valor (R$)</span>
+          <input name="valor" inputmode="decimal" placeholder="0,00" class="money" required>
+        </label>
+        <label class="field"><span>Data</span><input name="data" type="date" required></label>
+      </div>
+      <div class="row2">
+        <label class="field"><span>Categoria</span><select name="categoria" class="select" required></select></label>
+        <label class="field"><span>Situação</span>
+          <select name="situacao" class="select">
+            <option>Pendente</option><option>Pago</option><option>Recebido</option><option>Cancelado</option>
+          </select>
+        </label>
+      </div>
+      <label class="field"><span>Descrição</span><input name="descricao" placeholder="Ex.: Supermercado, Salário, Aluguel…" required maxlength="80"></label>
+      <label class="field"><span>Observações <small class="opc">opcional</small></span><textarea name="observacoes" rows="2" maxlength="200" placeholder="Anotações, parcela, conta…"></textarea></label>
+      <p class="form-error is-hidden" id="formLancError"></p>
+      <div class="modal__foot">
+        <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn btn--primary" id="btnSalvarLanc">Salvar lançamento</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================ CONFIRMAÇÃO ============================ -->
+<div class="modal" id="modalConfirm" aria-hidden="true">
+  <div class="modal__dialog modal__dialog--sm" role="dialog" aria-modal="true">
+    <div class="modal__head"><h3 id="confirmTitle">Confirmar</h2><button class="icon-btn" data-close aria-label="Fechar">✕</button></div>
+    <div class="modal__body">
+      <p id="confirmMsg">Tem certeza?</p>
+      <div class="modal__foot">
+        <button class="btn btn--ghost" data-close>Cancelar</button>
+        <button class="btn btn--danger" id="btnConfirmOk">Confirmar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/exemplo.js"></script>
+<script src="js/store.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
