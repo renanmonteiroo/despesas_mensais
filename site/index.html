@@ -7,6 +7,11 @@
 <meta name="description" content="Sistema gratuito de controle de despesas e receitas mensais com login, painel, gráficos e sincronização em nuvem.">
 <meta name="theme-color" content="#0f172a">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FinControl">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -250,6 +255,29 @@
         <div class="grid grid--2">
           <div class="card">
             <div class="card__head">
+              <div>
+                <h2>Ritmo do mês</h2>
+                <p class="muted" id="ritmoSub">Média diária, projeção e comparativo</p>
+              </div>
+            </div>
+            <div class="rows" id="ritmoBox"></div>
+          </div>
+
+          <div class="card">
+            <div class="card__head">
+              <div>
+                <h2>Maiores despesas</h2>
+                <p class="muted" id="maioresSub">Maiores valores do período</p>
+              </div>
+              <a class="link" href="#/lancamentos">Ver todos</a>
+            </div>
+            <div class="rows" id="maioresList"></div>
+          </div>
+        </div>
+
+        <div class="grid grid--2">
+          <div class="card">
+            <div class="card__head">
               <h2>Últimos lançamentos</h2>
               <a class="link" href="#/lancamentos">Ver todos</a>
             </div>
@@ -263,6 +291,21 @@
             </div>
             <div class="rows" id="pendList"></div>
           </div>
+        </div>
+
+        <!-- v1.1 · melhores juros do dia (movido do topo para depois de Pendências) -->
+        <div class="card card--juros" id="cardJuros">
+          <div class="card__head">
+            <div>
+              <h2>Melhores juros de investimento · hoje</h2>
+              <p class="muted" id="jurosSub">Buscando as taxas do dia no Banco Central…</p>
+            </div>
+            <span class="pill pill--blue" id="jurosMelhor">…</span>
+          </div>
+          <ul class="juros-lista juros-lista--row" id="jurosLista">
+            <li class="muted small">Buscando as taxas do dia no Banco Central…</li>
+          </ul>
+          <div class="juros-fonte" id="jurosFonte"><span class="muted small">—</span></div>
         </div>
 
         <div class="card">
@@ -297,7 +340,7 @@
                 <option value="">Todos os tipos</option>
                 <option>Receita</option>
                 <option>Despesa</option>
-                <option>Transferência</option>
+                <option>PIX</option>
               </select>
               <select id="filtroCategoria" class="select"><option value="">Todas as categorias</option></select>
               <select id="filtroSituacao" class="select">
@@ -305,6 +348,18 @@
                 <option>Pago</option><option>Recebido</option><option>Pendente</option><option>Cancelado</option>
               </select>
               <button class="btn btn--soft btn--sm" id="btnLimparFiltros">Limpar</button>
+            </div>
+            <div class="toolbar__filters toolbar__filters--extra">
+              <label class="field field--inline"><span>De</span><input type="date" id="filtroDe" class="input-sm"></label>
+              <label class="field field--inline"><span>Até</span><input type="date" id="filtroAte" class="input-sm"></label>
+              <select id="filtroOrdem" class="select" aria-label="Ordenar por">
+                <option value="data-desc">Ordenar: mais recente</option>
+                <option value="data-asc">Ordenar: mais antigo</option>
+                <option value="valor-desc">Ordenar: maior valor</option>
+                <option value="valor-asc">Ordenar: menor valor</option>
+                <option value="desc-az">Ordenar: descrição A–Z</option>
+              </select>
+              <span class="muted small" id="filtroPeriodoTxt"></span>
             </div>
           </div>
 
@@ -349,6 +404,21 @@
           </div>
           <div class="card">
             <div class="card__head"><h2>Minhas categorias</h2><span class="pill" id="catCount">0</span></div>
+            <div class="toolbar">
+              <div class="toolbar__search">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                <input type="search" id="buscaCat" placeholder="Buscar categoria por nome…">
+              </div>
+              <div class="toolbar__filters">
+                <select id="filtroCatTipo" class="select">
+                  <option value="">Todos os tipos</option>
+                  <option>Despesa</option>
+                  <option>Receita</option>
+                  <option>Ambos</option>
+                </select>
+                <button class="btn btn--soft btn--sm" id="btnLimparCat">Limpar</button>
+              </div>
+            </div>
             <div class="tags" id="tagsCategorias"></div>
           </div>
         </div>
@@ -462,14 +532,14 @@
 <div class="modal" id="modalLanc" aria-hidden="true">
   <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal__head">
-      <h3 id="modalTitle">Novo lançamento</h2>
+      <h3 id="modalTitle">Novo lançamento</h3>
       <button class="icon-btn" data-close aria-label="Fechar">✕</button>
     </div>
     <form id="formLanc" class="modal__body form-grid" novalidate>
       <div class="seg seg--tipo" id="segTipo">
         <button type="button" class="seg__b is-active" data-tipo="Despesa">Despesa</button>
         <button type="button" class="seg__b" data-tipo="Receita">Receita</button>
-        <button type="button" class="seg__b" data-tipo="Transferência">Transferência</button>
+        <button type="button" class="seg__b" data-tipo="PIX">PIX</button>
       </div>
       <div class="row2">
         <label class="field"><span>Valor (R$)</span>
@@ -483,6 +553,7 @@
           <select name="situacao" class="select">
             <option>Pendente</option><option>Pago</option><option>Recebido</option><option>Cancelado</option>
           </select>
+          <small class="field__help is-hidden" id="sitHint">PIX: <b>“Recebido”</b> conta como receita · <b>“Pago”</b> conta como despesa · <b>“Pendente”</b> fica só nas pendências.</small>
         </label>
       </div>
       <label class="field"><span>Descrição</span><input name="descricao" placeholder="Ex.: Supermercado, Salário, Aluguel…" required maxlength="80"></label>
@@ -499,7 +570,7 @@
 <!-- ============================ CONFIRMAÇÃO ============================ -->
 <div class="modal" id="modalConfirm" aria-hidden="true">
   <div class="modal__dialog modal__dialog--sm" role="dialog" aria-modal="true">
-    <div class="modal__head"><h3 id="confirmTitle">Confirmar</h2><button class="icon-btn" data-close aria-label="Fechar">✕</button></div>
+    <div class="modal__head"><h3 id="confirmTitle">Confirmar</h3><button class="icon-btn" data-close aria-label="Fechar">✕</button></div>
     <div class="modal__body">
       <p id="confirmMsg">Tem certeza?</p>
       <div class="modal__foot">

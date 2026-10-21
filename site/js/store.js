@@ -225,6 +225,14 @@ window.Store = (function () {
     return db.collection("usuarios").doc(currentUser.uid).collection("categorias");
   }
 
+  /* v1.1 — migração de tipos antigos: "Transferência"/"Transferencia"/"pix" → "PIX".
+     Só há escrita enquanto existirem itens legados (após a primeira gravação o
+     snapshot volta sem legados e o ciclo se encerra). */
+  function ehTipoLegado(t) {
+    return t === "Transferência" || t === "Transferencia" || t === "pix" || t === "Pix";
+  }
+  function tipoMigrado(t) { return ehTipoLegado(t) ? "PIX" : t; }
+
   function watchLanc(cb) {
     watchers.lanc.push(cb);
     var stop = function () {
@@ -232,7 +240,14 @@ window.Store = (function () {
     };
     if (mode === "firebase") {
       var unsub = colLanc().orderBy("data", "desc").onSnapshot(function (snap) {
-        cb(snap.docs.map(function (d) { var o = d.data(); o.id = d.id; return o; }));
+        var lista = snap.docs.map(function (d) { var o = d.data(); o.id = d.id; return o; });
+        var legados = snap.docs.filter(function (d) { return ehTipoLegado(d.data().tipo); });
+        if (legados.length) {
+          var b = db.batch();
+          legados.forEach(function (d) { b.update(d.ref, { tipo: "PIX" }); });
+          b.commit().catch(function (e) { console.warn("migração Transferência→PIX:", e); });
+        }
+        cb(lista.map(function (o) { if (ehTipoLegado(o.tipo)) o.tipo = "PIX"; return o; }));
       }, function (err) { console.warn(err); });
       return function () { stop(); unsub(); };
     }
@@ -246,6 +261,8 @@ window.Store = (function () {
     // garante que todo item tenha id (dados importados em versões antigas, backups etc.)
     var mudou = false;
     arr.forEach(function (x) { if (!x.id) { x.id = uuid(); mudou = true; } });
+    // v1.1: migra tipos antigos de transferência para PIX
+    arr.forEach(function (x) { var t = tipoMigrado(x.tipo); if (t !== x.tipo) { x.tipo = t; mudou = true; } });
     if (mudou) writeJSON(uidKey("lanc", currentUser.uid), arr);
     return arr;
   }
@@ -288,7 +305,8 @@ window.Store = (function () {
     if (!novos.length) return Promise.resolve(0);
     novos.forEach(function (it) {
       it.criadoEm = agora(); it.atualizadoEm = agora();
-      if (!it.situacao) it.situacao = it.tipo === "Receita" ? "Recebido" : "Pago";
+      if (!it.situacao) it.situacao = it.tipo === "Receita" ? "Recebido"
+        : (it.tipo === "PIX" ? "Pendente" : "Pago");
       if (!it.observacoes) it.observacoes = "Importado";
     });
 

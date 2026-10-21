@@ -697,9 +697,10 @@ npx firebase-tools --version                # 15.34.0 (verificado em 21/10/2026)
 | Versão | Data | Mudança |
 |---|---|---|
 | **1.0** | 21/10/2026 | Primeiro deploy em produção: SPA completa (login, painel, lançamentos, categorias, importação xlsx/csv/json, exportações, configurações), Firebase Auth + Firestore conectados, regras de isolamento publicadas, testes ponta a ponta aprovados (cadastro → gravação → persistência após reload). Documentação criada. |
+| **1.1** | 21/10/2026 | **Painel:** card “Melhores juros de investimento do dia” (Selic/CDI/poupança via API do Banco Central — SGS 432/12/195, com cache diário, repetições de requisição e modo offline) posicionado após Pendências; taxa de poupança movida para os chips; novos cards “Ritmo do mês” (média/dia, projeção, comparativo) e “Maiores despesas”. **Competência:** o seletor do topo lista apenas meses com lançamentos + “Todo o período”. **PIX:** tipo substituiu “Transferência” (importação, filtros, badge e migração automática de dados antigos); “Recebido” conta como receita, “Pago” como despesa e “Pendente” só aparece em pendências, com dica no formulário. **Correção:** editar um lançamento restaurava a situação errada (select era recriado). **Lançamentos:** novos filtros de período (De/Até) e ordenação (data/valor/descrição). **Categorias:** busca por texto e filtro por tipo. **PWA:** manifest.webmanifest, ícones PNG 192/512/maskable e service worker (app shell e taxas em cache offline; Auth/Firestore sempre em rede), registro automático em `app.js` e headers `no-cache` para `sw.js`/manifest. **API do BCB:** série 432 limitada a 20 valores, seleção por maior data (séries chegam em ordens mistas) e retries p/ falha intermitente de CORS. |
 
-**Próxima versão (sugestão):** 1.1 — padronização da marca (P0-1), remoção da demo (P0-4),
-verificação de e-mail (P1-1).
+**Próxima versão (sugestão):** 1.2 — padronização da marca (P0-1), remoção da demo (P0-4),
+verificação de e-mail (P1-1), geração de APK/Windows via PWABuilder a partir do PWA publicado.
 
 ---
 
