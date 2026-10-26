@@ -15,5 +15,10 @@
     { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "assets/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
     { "src": "assets/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    { "name": "Novo lançamento", "short_name": "Lançar", "description": "Registre uma despesa ou receita rapidamente", "url": "./#/lancamentos", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Painel", "short_name": "Painel", "description": "Visão geral das finanças", "url": "./#/painel", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Metas", "short_name": "Metas", "description": "Progresso das metas e caixinhas", "url": "./#/metas", "icons": [{ "src": "assets/icon-192.png", "sizes": "192x192" }] }
   ]
 }

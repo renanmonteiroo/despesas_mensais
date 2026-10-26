@@ -15,7 +15,7 @@ window.Charts = (function () {
   var PALETA = ["#6366f1", "#e11d48", "#059669", "#f59e0b", "#0891b2", "#7c3aed",
                 "#db2777", "#65a30d", "#0ea5e9", "#f97316", "#14b8a6", "#a855f7"];
 
-  var fluxoInst = null, catInst = null;
+  var fluxoInst = null, catInst = null, linhaInst = null;
 
   function css(varName, fallback) {
     var v = getComputedStyle(document.documentElement).getPropertyValue(varName);
@@ -66,6 +66,77 @@ window.Charts = (function () {
     } else {
       desenharFluxoFallback(el, labels, rec, des, sal);
     }
+  }
+
+  /* ---------------- LINHA (evolução, v1.2) ---------------- */
+  function linha(el, dados) {
+    if (!el) return;
+    destroyLinha();
+    var labels = dados.map(function (d) { return d.label; });
+    var vals = dados.map(function (d) { return d.valor; });
+    if (window.Chart) {
+      linhaInst = new Chart(el.getContext("2d"), {
+        type: "line",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Saldo acumulado", data: vals,
+            borderColor: CORES.blue, backgroundColor: "rgba(37,99,235,.14)",
+            borderWidth: 2.5, tension: .35, fill: true,
+            pointRadius: 2.5, pointHoverRadius: 6, pointBackgroundColor: CORES.blue
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          interaction: { mode: "index", intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: "#0f172a", padding: 11, cornerRadius: 9, titleFont: { weight: "700" },
+              callbacks: { label: function (c) { return " " + brl(c.parsed.y); } }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: corEixo(), font: { size: 11, weight: "600" } }, border: { display: false } },
+            y: {
+              grid: { color: corGrade() }, border: { display: false },
+              ticks: { color: corEixo(), font: { size: 11 }, callback: function (v) { return milhar(v); } }
+            }
+          }
+        }
+      });
+    } else {
+      desenharLinhaFallback(el, labels, vals);
+    }
+  }
+
+  function desenharLinhaFallback(el, labels, vals) {
+    var o = setupCanvas(el); if (!o) return;
+    var ctx = o.ctx, w = o.w, h = o.h;
+    var padL = 58, padR = 10, padT = 12, padB = 26;
+    var iw = w - padL - padR, ih = h - padT - padB;
+    var min = Math.min.apply(null, vals.concat([0]));
+    var max = Math.max.apply(null, vals.concat([0]));
+    if (max === min) max = min + 1;
+    var xx = function (i) { return padL + (vals.length > 1 ? (i / (vals.length - 1)) * iw : iw / 2); };
+    var yy = function (v) { return padT + ih - ((v - min) / (max - min)) * ih; };
+    // linha do zero
+    ctx.strokeStyle = corGrade(); ctx.setLineDash([4, 4]); ctx.beginPath();
+    ctx.moveTo(padL, yy(0)); ctx.lineTo(padL + iw, yy(0)); ctx.stroke(); ctx.setLineDash([]);
+    // área + linha
+    var grad = ctx.createLinearGradient(0, padT, 0, padT + ih);
+    grad.addColorStop(0, "rgba(37,99,235,.28)"); grad.addColorStop(1, "rgba(37,99,235,0)");
+    ctx.beginPath();
+    vals.forEach(function (v, i) { if (i === 0) ctx.moveTo(xx(i), yy(v)); else ctx.lineTo(xx(i), yy(v)); });
+    ctx.strokeStyle = CORES.blue; ctx.lineWidth = 2.5; ctx.lineJoin = "round"; ctx.stroke();
+    ctx.lineTo(xx(vals.length - 1), yy(min)); ctx.lineTo(xx(0), yy(min)); ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+    // rótulos de eixo
+    ctx.fillStyle = corEixo(); ctx.font = "11px sans-serif"; ctx.textAlign = "right";
+    ctx.fillText(milhar(max), padL - 8, padT + 10);
+    ctx.fillText(milhar(min), padL - 8, padT + ih);
+    ctx.textAlign = "center";
+    labels.forEach(function (lb, i) { if (i % 2 === 0) ctx.fillText(lb, xx(i), h - 8); });
   }
 
   /* ---------------- DONUT DE CATEGORIAS ---------------- */
@@ -204,6 +275,7 @@ window.Charts = (function () {
 
   function destroyFluxo() { if (fluxoInst) { fluxoInst.destroy(); fluxoInst = null; } }
   function destroyCat() { if (catInst) { catInst.destroy(); catInst = null; } }
+  function destroyLinha() { if (linhaInst) { linhaInst.destroy(); linhaInst = null; } }
 
   /* ---------------- helpers ---------------- */
   function brl(v) {
@@ -215,7 +287,7 @@ window.Charts = (function () {
     return String(v);
   }
 
-  function destroyAll() { destroyFluxo(); destroyCat(); }
+  function destroyAll() { destroyFluxo(); destroyCat(); destroyLinha(); }
 
-  return { fluxo: fluxo, donut: donut, destroyAll: destroyAll, brl: brl, PALETA: PALETA };
+  return { fluxo: fluxo, donut: donut, linha: linha, destroyAll: destroyAll, brl: brl, PALETA: PALETA };
 })();

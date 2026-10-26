@@ -6,7 +6,7 @@
    • Firebase (Auth/Firestore): SEM cache (sempre rede)
    Para publicar alterações: versione a constante V abaixo.
    ========================================================= */
-var V = "fincontrol-v1";
+var V = "fincontrol-v3";
 
 var PRECACHE = [
   "./",
@@ -31,8 +31,17 @@ function ehTempoReal(url) {
 
 self.addEventListener("install", function (e) {
   e.waitUntil(
-    caches.open(V).then(function (c) { return c.addAll(PRECACHE); })
-      .then(function () { return self.skipWaiting(); })
+    caches.open(V).then(function (c) {
+      // cache: "no-cache" força revalidação — evita congelar uma versão velha
+      // que o CDN ainda estivesse servindo durante a propagação de um deploy.
+      return Promise.all(PRECACHE.map(function (u) {
+        return fetch(new Request(u, { cache: "no-cache", credentials: "same-origin" }))
+          .then(function (r) {
+            if (!r.ok) throw new Error("precache falhou: " + u + " (" + r.status + ")");
+            return c.put(u, r);
+          });
+      }));
+    }).then(function () { return self.skipWaiting(); })
   );
 });
 
