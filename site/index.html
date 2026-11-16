@@ -33,6 +33,17 @@
   var h = location.hostname;
   if (h === PRINCIPAL || h === "localhost" || h === "127.0.0.1" || /\.(example|test)$/.test(h)) {
     try { sessionStorage.removeItem("fc.redir"); } catch (e) {}
+    /* Rota padrão: o servidor nunca vê o "#", então o /#/painel é
+       garantido aqui, no cliente. Só age quando não há hash (deep
+       links como #/lancamentos são preservados). replaceState evita
+       criar uma entrada extra no histórico. */
+    if (!location.hash) {
+      try {
+        history.replaceState(null, "", location.pathname + location.search + "#/painel");
+      } catch (e) {
+        location.hash = "#/painel";
+      }
+    }
     return;
   }
   if (!/\.(web\.app|firebaseapp\.com)$/.test(h)) return;

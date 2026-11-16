@@ -127,16 +127,58 @@ No painel do Registro.br, no domínio → **Serviços DNS** → **"Configurar en
 
 | Tipo | Nome (host) | Valor |
 |---|---|---|
-| A | *(vazio — domínio raiz)* | `216.239.32.21` |
-| A | *(vazio — domínio raiz)* | `216.239.34.21` |
-| A | *(vazio — domínio raiz)* | `216.239.36.21` |
-| A | *(vazio — domínio raiz)* | `216.239.38.21` |
-| CNAME | `www` | `rm-controle-financeiro-a8d83.web.app` |
+| A | *(vazio — domínio raiz)* | `199.36.158.100` |
+
+> O Firebase trocou os IPs antigos (`216.239.32/34/36/38.21`) por `199.36.158.100`
+> (e `199.36.158.101`). A API do Hosting devolve os IPs esperados em
+> `provisioning.expectedIps` — é essa lista que vale, não a de qualquer tutorial.
+> Confirme com `nslookup rmcontrolefinanceiro.com.br` (deve dar `199.36.158.100`)
+> e compare com `nslookup rm-controle-financeiro-a8d83.web.app` (mesmo IP).
 
 > **Se houver encaminhamento web ativo** (o painel do Registro.br tem um item de
-> encaminhamento/redirecionamento de URL), **remova-o** — ele responde `302 → …web.app`
-> e é justamente o que faz a URL trocar. O DNS do Firebase substitui esse serviço.
-> Confirme depois em: `nslookup rmcontrolefinanceiro.com.br` (deve dar os IPs 216.239.x.x).
+> encaminhamento/redirecionamento de URL), **remova-o** — ele responde `302 → …web.app`.
+> O DNS do Firebase substitui esse serviço.
+
+### Domínio com "redirecionar" em vez de "servir conteúdo"
+
+Se, mesmo com o DNS certo, `https://rmcontrolefinanceiro.com.br/` responder
+`301 → https://rm-controle-financeiro-a8d83.web.app/`, o domínio está cadastrado
+no Hosting como **redirect** e não como **serve content**. Confirme pela API
+(token do CLI em `~/.config/configstore/firebase-tools.json`):
+
+```powershell
+$tok = (Get-Content "$env:USERPROFILE\.config\configstore\firebase-tools.json" -Raw | ConvertFrom-Json).tokens.access_token
+Invoke-RestMethod -Uri 'https://firebasehosting.googleapis.com/v1beta1/sites/rm-controle-financeiro-a8d83/domains/rmcontrolefinanceiro.com.br' `
+  -Headers @{ Authorization = "Bearer $tok" }
+# problema: "domainRedirect": { "domainName": "...web.app", ... }
+```
+
+Corrija com `PUT` **sem** o campo `domainRedirect` (o `site` do corpo é o ID puro,
+sem o prefixo `sites/`):
+
+```powershell
+$uri = 'https://firebasehosting.googleapis.com/v1beta1/sites/rm-controle-financeiro-a8d83/domains/rmcontrolefinanceiro.com.br'
+$body = @{ domainName = 'rmcontrolefinanceiro.com.br'; site = 'rm-controle-financeiro-a8d83' } | ConvertTo-Json
+Invoke-RestMethod -Uri $uri -Method Put -Headers @{ Authorization = "Bearer $tok" } `
+  -ContentType 'application/json' -Body $body
+```
+
+O campo `domainRedirect` some da resposta e o domínio volta a servir conteúdo.
+Pelo console: Firebase → Hosting → domínio → remover e adicionar de novo **sem**
+marcar a caixa de redirecionamento.
+
+> `dnsStatus: DNS_MATCH` + `status: DOMAIN_ACTIVE` indicam DNS e cadastro OK;
+> `certStatus: CERT_PROPAGATING` é normal logo após a alteração (o HTTPS pode
+> levar alguns minutos para voltar a validar).
+
+### Rota `/#/painel`
+
+O `#` **nunca chega ao servidor**, então não existe redirect de servidor para
+`/#/painel` — o roteamento por hash é 100% do cliente. O `site/index.html`
+garante a rota padrão no `<head>` (com `history.replaceState`, para não criar
+entrada extra no histórico) e só age quando **não há hash**, preservando deep
+links como `#/lancamentos`. O `js/app.js` já caía em `painel` via
+`rotear()` e o `entrarApp()` também define `#/painel` após o login.
 
 Após salvar, o Firebase detecta sozinho e emite o **certificado HTTPS automático e
 gratuito** (Let's Encrypt) — minutos nas próximas vezes, até 24 h na primeira.
@@ -223,7 +265,7 @@ Arquivos envolvidos: `firestore.rules` e `firestore.indexes.json`.
 |---|---|---|
 | Deploy antigo aparecendo | cache do navegador | `Ctrl+F5`; conferir se o deploy terminou `Deploy complete!` |
 | Site ficou antigo só em aparelho instalado | cache do service worker | incrementar `V` no `sw.js` + novo deploy |
-| `rmcontrolefinanceiro.com.br` muda para a `…web.app` | encaminhamento do Registro.br ou domínio como "redirect" no Firebase | §6-B remover encaminhamento; §6-A domínio servindo conteúdo |
+| `rmcontrolefinanceiro.com.br` muda para a `…web.app` | domínio cadastrado como **redirect** no Hosting (301) ou encaminhamento do Registro.br | §6-A conferir `domainRedirect` na API e removê-lo; §6-B remover encaminhamento |
 | `rmcontrolefinanceiro.com.br` não abre / "não resolve" | DNS ainda propagando ou registro errado | conferir os 5 registros em §6-B; `nslookup rmcontrolefinanceiro.com.br` |
 | Aviso "connection is not private" no domínio novo | certificado ainda emitindo | aguardar (até 24 h na 1.ª vez), recarregar depois |
 | Erro de domínio não autorizado no login | domínio fora da lista do Auth | §6-C Authorized domains |
