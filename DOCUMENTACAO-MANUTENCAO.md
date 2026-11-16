@@ -2,7 +2,8 @@
 
 > **Versão 1.0** · 21/10/2026
 > Projeto Firebase: `rm-controle-financeiro-a8d83` (“RM Controle Financeiro”)
-> **Produção:** <https://rm-controle-financeiro-a8d83.web.app>
+> **Produção:** <https://rmcontrolefinanceiro.com.br> (endereço principal · redireciona de `<https://rm-controle-financeiro-a8d83.web.app>`)
+> **Deploy manual completo:** ver [DEPLOY.md](DEPLOY.md)
 > Documentos relacionados: [`LEIA-ME.md`](LEIA-ME.md) (uso geral) · [`DEPLOY-PASSO-A-PASSO.md`](DEPLOY-PASSO-A-PASSO.md) (criar projeto do zero)
 
 ---
@@ -64,8 +65,8 @@ taxa de poupança), construída a partir da planilha
                 ▲
                 │ deploy dos arquivos estáticos
      ┌─────────────────────┐
-     │  Firebase Hosting   │  https://rm-controle-financeiro-a8d83.web.app
-     └─────────────────────┘
+     │  Firebase Hosting   │  https://rmcontrolefinanceiro.com.br (domínio próprio)
+     └─────────────────────┘     + alias grátis https://rm-controle-financeiro-a8d83.web.app
 ```
 
 ### 1.2 Modo de funcionamento do login (importante)
@@ -100,7 +101,7 @@ O selo abaixo do formulário de login indica qual modo está ativo.
 
 | Item | Valor |
 |---|---|
-| URL pública | <https://rm-controle-financeiro-a8d83.web.app> (alias: `…firebaseapp.com`) |
+| URL pública | <https://rmcontrolefinanceiro.com.br> (**principal**) · aliases: `…web.app` e `…firebaseapp.com` (redirecionam via JS no `index.html`) |
 | Projeto Firebase | ID `rm-controle-financeiro-a8d83` · nome “RM Controle Financeiro” · nº `577296865629` |
 | App web cadastrado | `RM_Controle_Financeiro` · App ID `1:577296865629:web:139ce4ac145781189eb0b4` |
 | Conta Google dona do projeto | `themarine100328@gmail.com` |
@@ -553,10 +554,11 @@ gere novo app web no console e atualize `config.js` (§5.4).
 
 ### 8.3 Domínios autorizados
 
-Hoje: `localhost`, `rm-controle-financeiro-a8d83.web.app`,
+Hoje: `localhost`, `rmcontrolefinanceiro.com.br`, `www.rmcontrolefinanceiro.com.br`,
+`rm-controle-financeiro-a8d83.web.app`,
 `rm-controle-financeiro-a8d83.firebaseapp.com`, `firebaseapp.com`.
-Console → **Authentication → Settings → Authorized domains** ao adicionar domínio próprio
-(Netlify/Vercel/Cloudflare) — sem isso o login retorna `auth/unauthorized-domain`.
+Console → **Authentication → Settings → Authorized domains** ao adicionar domínio próprio —
+sem isso o login retorna `auth/unauthorized-domain`. Passo a passo do domínio no [DEPLOY.md §6](DEPLOY.md).
 
 ### 8.4 Lacunas conhecidas (melhorias sugeridas em §9)
 
@@ -650,6 +652,8 @@ Console → **Authentication → Settings → Authorized domains** ao adicionar 
 
 ## 11. Referência rápida de comandos
 
+> **Guia completo de publicação manual (passo a passo + domínio + rollback):** [DEPLOY.md](DEPLOY.md)
+
 ```powershell
 # ---- ir para a pasta do projeto ----
 cd "C:\Users\renan.batista\OneDrive\PROJETOS COMPARTILHADOS\DESPESAS_MENSAIS"
@@ -668,6 +672,7 @@ npx firebase-tools deploy                   # tudo (site + regras + índices)
 npx firebase-tools deploy --only hosting    # só o site
 npx firebase-tools deploy --only firestore:rules
 npx firebase-tools hosting:rollback         # voltar versão
+npx firebase-tools hosting:channel:deploy teste -e 2h   # preview de 2 h
 npx firebase-tools hosting:sites:list       # sites de hospedagem
 npx firebase-tools open                     # abre o site no navegador
 
@@ -681,7 +686,8 @@ npx firebase-tools --version                # 15.34.0 (verificado em 21/10/2026)
 
 | Finalidade | URL |
 |---|---|
-| Site em produção | <https://rm-controle-financeiro-a8d83.web.app> |
+| Site em produção (**principal**) | <https://rmcontrolefinanceiro.com.br> |
+| Site (endereço Firebase) | <https://rm-controle-financeiro-a8d83.web.app> (redireciona para o domínio principal) |
 | Console Firebase | <https://console.firebase.google.com/project/rm-controle-financeiro-a8d83/overview> |
 | Usuários (Auth) | <https://console.firebase.google.com/project/rm-controle-financeiro-a8d83/authentication/users> |
 | Banco (Firestore) | <https://console.firebase.google.com/project/rm-controle-financeiro-a8d83/firestore/data> |
@@ -697,9 +703,15 @@ npx firebase-tools --version                # 15.34.0 (verificado em 21/10/2026)
 | Versão | Data | Mudança |
 |---|---|---|
 | **1.0** | 21/10/2026 | Primeiro deploy em produção: SPA completa (login, painel, lançamentos, categorias, importação xlsx/csv/json, exportações, configurações), Firebase Auth + Firestore conectados, regras de isolamento publicadas, testes ponta a ponta aprovados (cadastro → gravação → persistência após reload). Documentação criada. |
+| **1.1** | 21/10/2026 | **Painel:** card “Melhores juros de investimento do dia” (Selic/CDI/poupança via API do Banco Central — SGS 432/12/195, com cache diário, repetições de requisição e modo offline) posicionado após Pendências; taxa de poupança movida para os chips; novos cards “Ritmo do mês” (média/dia, projeção, comparativo) e “Maiores despesas”. **Competência:** o seletor do topo lista apenas meses com lançamentos + “Todo o período”. **PIX:** tipo substituiu “Transferência” (importação, filtros, badge e migração automática de dados antigos); “Recebido” conta como receita, “Pago” como despesa e “Pendente” só aparece em pendências, com dica no formulário. **Correção:** editar um lançamento restaurava a situação errada (select era recriado). **Lançamentos:** novos filtros de período (De/Até) e ordenação (data/valor/descrição). **Categorias:** busca por texto e filtro por tipo. **PWA:** manifest.webmanifest, ícones PNG 192/512/maskable e service worker (app shell e taxas em cache offline; Auth/Firestore sempre em rede), registro automático em `app.js` e headers `no-cache` para `sw.js`/manifest. **API do BCB:** série 432 limitada a 20 valores, seleção por maior data (séries chegam em ordens mistas) e retries p/ falha intermitente de CORS. |
+| **1.2** | 26/10/2026 | **Contas e carteiras (MVP 1):** nova tela “Contas” com CRUD (nome, banco, tipo, saldo inicial, cor), saldo individual por conta, cartão “Consolidado”, campo “Conta” no formulário de lançamento (padrão = primeira conta), filtro por conta em Lançamentos (incl. “Sem conta”), 4º KPI “Saldo consolidado” no painel e seed automático de “Conta principal” para contas já cadastradas. **Novas coleções:** `usuarios/{uid}/contas` e `usuarios/{uid}/metas` (Firestore + localStorage no modo local). **Lançamentos recorrentes (MVP 2):** checkbox “Repetir todo mês”; no login o app gera automaticamente os meses seguintes até o mês atual (sem duplicatas — chave mês+descrição+valor+conta; situação “Pendente”). **Sugestão de categoria (MVP 3):** aprende do histórico (token→categoria) e sugere enquanto o usuário digita a descrição (chip clicável). **Orçamento mensal (MVP 4):** campo “orçamento” por categoria (tela Categorias) + card “Orçamento do mês” no painel com barra orçado×realizado e alertas 80% (amarelo/ toast) e 100% (vermelho/ toast). **Evolução do saldo (MVP 5):** gráfico de linha de 12 meses no painel (novo `Charts.linha`, com fallback canvas offline). **Metas/caixinhas (MVP 7):** nova tela “Metas” — valor alvo, prazo (mês/ano), aporte mensal, aportes manuais, barra de progresso, previsão de conclusão e alerta de atraso no prazo. **Simuladores (MVP 6/8):** juros compostos (inicial + aporte mensal, taxa % ao mês ou ano, IR regressivo opcional 15–22,5%) e “Resgate vs. deixar render” (quanto deixa de ganhar). **UX:** chip “🔥 Sequência de registros” (streak), glossário financeiro em Configurações (12 termos), atalhos PWA (Novo lançamento / Painel / Metas), cache do SW bumpado para `fincontrol-v2`. **Modelo de dados:** lançamentos ganharam `conta` (nome) e `recorrencia` (“nenhuma”/“mensal”); categorias ganharam `orcamento` — tudo retrocompatível. |
 
-**Próxima versão (sugestão):** 1.1 — padronização da marca (P0-1), remoção da demo (P0-4),
-verificação de e-mail (P1-1).
+**Próxima versão (sugestão):** 1.3 — anexo de comprovante (base64 comprimido), tags livres,
+subcategorias, exportação PDF (CSS de impressão), regra 50/30/20 (natureza das categorias),
+importação OFX, carteira de investimentos + IR, projeção de fluxo 3/6/12 meses,
+padronização da marca (P0-1), remoção do botão de demo (P0-4), verificação de e-mail (P1-1),
+APK/Windows via PWABuilder. Open Finance, push, 2FA e contas compartilhadas exigem plano
+Blaze/backend e ficam para versões futuras.
 
 ---
 

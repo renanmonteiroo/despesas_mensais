@@ -225,6 +225,14 @@ window.Store = (function () {
     return db.collection("usuarios").doc(currentUser.uid).collection("categorias");
   }
 
+  /* v1.1 — migração de tipos antigos: "Transferência"/"Transferencia"/"pix" → "PIX".
+     Só há escrita enquanto existirem itens legados (após a primeira gravação o
+     snapshot volta sem legados e o ciclo se encerra). */
+  function ehTipoLegado(t) {
+    return t === "Transferência" || t === "Transferencia" || t === "pix" || t === "Pix";
+  }
+  function tipoMigrado(t) { return ehTipoLegado(t) ? "PIX" : t; }
+
   function watchLanc(cb) {
     watchers.lanc.push(cb);
     var stop = function () {
@@ -232,7 +240,14 @@ window.Store = (function () {
     };
     if (mode === "firebase") {
       var unsub = colLanc().orderBy("data", "desc").onSnapshot(function (snap) {
-        cb(snap.docs.map(function (d) { var o = d.data(); o.id = d.id; return o; }));
+        var lista = snap.docs.map(function (d) { var o = d.data(); o.id = d.id; return o; });
+        var legados = snap.docs.filter(function (d) { return ehTipoLegado(d.data().tipo); });
+        if (legados.length) {
+          var b = db.batch();
+          legados.forEach(function (d) { b.update(d.ref, { tipo: "PIX" }); });
+          b.commit().catch(function (e) { console.warn("migração Transferência→PIX:", e); });
+        }
+        cb(lista.map(function (o) { if (ehTipoLegado(o.tipo)) o.tipo = "PIX"; return o; }));
       }, function (err) { console.warn(err); });
       return function () { stop(); unsub(); };
     }
@@ -246,6 +261,8 @@ window.Store = (function () {
     // garante que todo item tenha id (dados importados em versões antigas, backups etc.)
     var mudou = false;
     arr.forEach(function (x) { if (!x.id) { x.id = uuid(); mudou = true; } });
+    // v1.1: migra tipos antigos de transferência para PIX
+    arr.forEach(function (x) { var t = tipoMigrado(x.tipo); if (t !== x.tipo) { x.tipo = t; mudou = true; } });
     if (mudou) writeJSON(uidKey("lanc", currentUser.uid), arr);
     return arr;
   }
@@ -288,7 +305,8 @@ window.Store = (function () {
     if (!novos.length) return Promise.resolve(0);
     novos.forEach(function (it) {
       it.criadoEm = agora(); it.atualizadoEm = agora();
-      if (!it.situacao) it.situacao = it.tipo === "Receita" ? "Recebido" : "Pago";
+      if (!it.situacao) it.situacao = it.tipo === "Receita" ? "Recebido"
+        : (it.tipo === "PIX" ? "Pendente" : "Pago");
       if (!it.observacoes) it.observacoes = "Importado";
     });
 
@@ -374,6 +392,131 @@ window.Store = (function () {
     return Promise.resolve();
   }
 
+  function updateCategoria(id, dados) {
+    dados.atualizadoEm = agora();
+    if (mode === "firebase") return colCats().doc(id).update(dados);
+    writeJSON(uidKey("cats", currentUser.uid), getCatsLocal().map(function (c) {
+      if (c.id === id) { Object.keys(dados).forEach(function (k) { if (k !== "id") c[k] = dados[k]; }); }
+      return c;
+    }));
+    emit("cats");
+    return Promise.resolve();
+  }
+
+  /* ---------------- contas e carteiras (v1.2) ---------------- */
+  function colContas() {
+    return db.collection("usuarios").doc(currentUser.uid).collection("contas");
+  }
+  function colMetas() {
+    return db.collection("usuarios").doc(currentUser.uid).collection("metas");
+  }
+  function contaPadrao() {
+    return { nome: "Conta principal", tipo: "Conta corrente", banco: "—", saldoInicial: 0, cor: "#6366f1" };
+  }
+  function getContasLocal() { return currentUser ? readJSON(uidKey("contas", currentUser.uid), []) : []; }
+  function getMetasLocal() { return currentUser ? readJSON(uidKey("metas", currentUser.uid), []) : []; }
+
+  function watchContas(cb) {
+    watchers.contas = watchers.contas || [];
+    watchers.contas.push(cb);
+    var stop = function () {
+      var i = watchers.contas.indexOf(cb); if (i > -1) watchers.contas.splice(i, 1);
+    };
+    if (mode === "firebase") {
+      var unsub = colContas().orderBy("nome").onSnapshot(function (snap) {
+        var lista = snap.docs.map(function (d) { var o = d.data(); o.id = d.id; return o; });
+        // seed preguiçoso: usuários criados antes da v1.2 recebem "Conta principal"
+        var semeado = readJSON(uidKey("seedConta", currentUser.uid), false);
+        if (!lista.length && !semeado) {
+          writeJSON(uidKey("seedConta", currentUser.uid), true);
+          colContas().add(contaPadrao()).catch(function () {});
+        }
+        cb(lista);
+      }, function (err) { console.warn(err); });
+      return function () { stop(); unsub(); };
+    }
+    var arr = getContasLocal();
+    if (!arr.length && !readJSON(uidKey("seedConta", currentUser.uid), false)) {
+      writeJSON(uidKey("seedConta", currentUser.uid), true);
+      var c = contaPadrao(); c.id = uuid(); arr = [c];
+      writeJSON(uidKey("contas", currentUser.uid), arr);
+    }
+    cb(arr);
+    return stop;
+  }
+
+  function addConta(c) {
+    c.criadoEm = agora();
+    if (mode === "firebase") { return colContas().add(c).then(function (r) { return r.id; }); }
+    c.id = uuid();
+    writeJSON(uidKey("contas", currentUser.uid), getContasLocal().concat([c]));
+    if (watchers.contas) watchers.contas.forEach(function (cb) { cb(getContasLocal()); });
+    return Promise.resolve(c.id);
+  }
+
+  function updateConta(id, dados) {
+    dados.atualizadoEm = agora();
+    if (mode === "firebase") return colContas().doc(id).update(dados);
+    writeJSON(uidKey("contas", currentUser.uid), getContasLocal().map(function (c) {
+      if (c.id === id) { Object.keys(dados).forEach(function (k) { if (k !== "id") c[k] = dados[k]; }); }
+      return c;
+    }));
+    if (watchers.contas) watchers.contas.forEach(function (cb) { cb(getContasLocal()); });
+    return Promise.resolve();
+  }
+
+  function deleteConta(id) {
+    if (mode === "firebase") return colContas().doc(id).delete();
+    writeJSON(uidKey("contas", currentUser.uid), getContasLocal().filter(function (c) { return c.id !== id; }));
+    if (watchers.contas) watchers.contas.forEach(function (cb) { cb(getContasLocal()); });
+    return Promise.resolve();
+  }
+
+  /* ---------------- metas / caixinhas (v1.2) ---------------- */
+  function watchMetas(cb) {
+    watchers.metas = watchers.metas || [];
+    watchers.metas.push(cb);
+    var stop = function () {
+      var i = watchers.metas.indexOf(cb); if (i > -1) watchers.metas.splice(i, 1);
+    };
+    if (mode === "firebase") {
+      var unsub = colMetas().orderBy("nome").onSnapshot(function (snap) {
+        cb(snap.docs.map(function (d) { var o = d.data(); o.id = d.id; return o; }));
+      }, function (err) { console.warn(err); });
+      return function () { stop(); unsub(); };
+    }
+    cb(getMetasLocal());
+    return stop;
+  }
+
+  function addMeta(m) {
+    m.criadoEm = agora();
+    if (!m.aportes) m.aportes = [];
+    if (mode === "firebase") { return colMetas().add(m).then(function (r) { return r.id; }); }
+    m.id = uuid();
+    writeJSON(uidKey("metas", currentUser.uid), getMetasLocal().concat([m]));
+    if (watchers.metas) watchers.metas.forEach(function (cb) { cb(getMetasLocal()); });
+    return Promise.resolve(m.id);
+  }
+
+  function updateMeta(id, dados) {
+    dados.atualizadoEm = agora();
+    if (mode === "firebase") return colMetas().doc(id).update(dados);
+    writeJSON(uidKey("metas", currentUser.uid), getMetasLocal().map(function (m) {
+      if (m.id === id) { Object.keys(dados).forEach(function (k) { if (k !== "id") m[k] = dados[k]; }); }
+      return m;
+    }));
+    if (watchers.metas) watchers.metas.forEach(function (cb) { cb(getMetasLocal()); });
+    return Promise.resolve();
+  }
+
+  function deleteMeta(id) {
+    if (mode === "firebase") return colMetas().doc(id).delete();
+    writeJSON(uidKey("metas", currentUser.uid), getMetasLocal().filter(function (m) { return m.id !== id; }));
+    if (watchers.metas) watchers.metas.forEach(function (cb) { cb(getMetasLocal()); });
+    return Promise.resolve();
+  }
+
   /* ---------------- sessão / perfil ---------------- */
   function getUser() { return currentUser; }
   function getMode() { return mode; }
@@ -385,7 +528,9 @@ window.Store = (function () {
     watchLanc: watchLanc, watchCats: watchCats,
     addLancamento: addLancamento, updateLancamento: updateLancamento, deleteLancamento: deleteLancamento,
     importarLancamentos: importarLancamentos, apagarTudo: apagarTudo,
-    addCategoria: addCategoria, deleteCategoria: deleteCategoria,
+    addCategoria: addCategoria, deleteCategoria: deleteCategoria, updateCategoria: updateCategoria,
+    watchContas: watchContas, addConta: addConta, updateConta: updateConta, deleteConta: deleteConta,
+    watchMetas: watchMetas, addMeta: addMeta, updateMeta: updateMeta, deleteMeta: deleteMeta,
     chave: function (it) { return chave(it); },
     categoriasPadrao: categoriasPadrao
   };

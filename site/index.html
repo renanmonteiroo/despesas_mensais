@@ -7,10 +7,56 @@
 <meta name="description" content="Sistema gratuito de controle de despesas e receitas mensais com login, painel, gráficos e sincronização em nuvem.">
 <meta name="theme-color" content="#0f172a">
 <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="FinControl">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/styles.css">
+<link rel="canonical" href="https://rmcontrolefinanceiro.com.br/">
+<script>
+/* =========================================================
+   Domínio principal: rmcontrolefinanceiro.com.br
+   ---------------------------------------------------------
+   Nos endereços antigos (*.web.app / *.firebaseapp.com) o site
+   redireciona para o domínio principal preservando caminho,
+   query e hash. Um contador com validade de 15 s evita laço de
+   redirecionamento caso o DNS do domínio principal ainda não
+   esteja apontando para o Firebase (ex.: encaminhamento do
+   Registro.br ativo durante a migração).
+   ========================================================= */
+(function () {
+  var PRINCIPAL = "rmcontrolefinanceiro.com.br";
+  var h = location.hostname;
+  if (h === PRINCIPAL || h === "localhost" || h === "127.0.0.1" || /\.(example|test)$/.test(h)) {
+    try { sessionStorage.removeItem("fc.redir"); } catch (e) {}
+    /* Rota padrão: o servidor nunca vê o "#", então o /#/painel é
+       garantido aqui, no cliente. Só age quando não há hash (deep
+       links como #/lancamentos são preservados). replaceState evita
+       criar uma entrada extra no histórico. */
+    if (!location.hash) {
+      try {
+        history.replaceState(null, "", location.pathname + location.search + "#/painel");
+      } catch (e) {
+        location.hash = "#/painel";
+      }
+    }
+    return;
+  }
+  if (!/\.(web\.app|firebaseapp\.com)$/.test(h)) return;
+  var n = 0;
+  try {
+    var d = JSON.parse(sessionStorage.getItem("fc.redir") || "{}");
+    if (d.t && (Date.now() - d.t) < 15000) n = d.n || 0; // só vale se recente
+  } catch (e) {}
+  if (n >= 3) return; // laço detectado nesta janela: para de tentar
+  try { sessionStorage.setItem("fc.redir", JSON.stringify({ n: n + 1, t: Date.now() })); } catch (e) {}
+  location.replace("https://" + PRINCIPAL + location.pathname + location.search + location.hash);
+})();
+</script>
 </head>
 <body>
 
@@ -151,9 +197,22 @@
         <svg viewBox="0 0 24 24"><path d="M20.6 13.4L12 4.8A2 2 0 0010.6 4H5a1 1 0 00-1 1v5.6a2 2 0 00.6 1.4l8.6 8.6a2 2 0 002.8 0l4.6-4.6a2 2 0 000-2.6z"/><circle cx="8" cy="8" r="1.2"/></svg>
         <span>Categorias</span>
       </a>
+      <a class="navitem" href="#/contas" data-nav="contas">
+        <svg viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h12a2 2 0 012 2v1H5a2 2 0 00-2 2z"/><path d="M3 10a2 2 0 012-2h14a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><circle cx="16.5" cy="13.5" r="1.2"/></svg>
+        <span>Contas</span>
+      </a>
       <a class="navitem" href="#/importar" data-nav="importar">
         <svg viewBox="0 0 24 24"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 21h16"/></svg>
         <span>Importar / Exportar</span>
+      </a>
+      <p class="sidebar__label">Planejamento</p>
+      <a class="navitem" href="#/metas" data-nav="metas">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5"/></svg>
+        <span>Metas e caixinhas</span>
+      </a>
+      <a class="navitem" href="#/simuladores" data-nav="simuladores">
+        <svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h4"/></svg>
+        <span>Simuladores</span>
       </a>
       <p class="sidebar__label">Conta</p>
       <a class="navitem" href="#/config" data-nav="config">
@@ -250,6 +309,52 @@
         <div class="grid grid--2">
           <div class="card">
             <div class="card__head">
+              <div>
+                <h2>Ritmo do mês</h2>
+                <p class="muted" id="ritmoSub">Média diária, projeção e comparativo</p>
+              </div>
+            </div>
+            <div class="rows" id="ritmoBox"></div>
+          </div>
+
+          <div class="card">
+            <div class="card__head">
+              <div>
+                <h2>Maiores despesas</h2>
+                <p class="muted" id="maioresSub">Maiores valores do período</p>
+              </div>
+              <a class="link" href="#/lancamentos">Ver todos</a>
+            </div>
+            <div class="rows" id="maioresList"></div>
+          </div>
+        </div>
+
+        <div class="grid grid--2">
+          <div class="card">
+            <div class="card__head">
+              <div>
+                <h2>Evolução do saldo</h2>
+                <p class="muted" id="evolucaoSub">Saldo acumulado nos últimos 12 meses</p>
+              </div>
+            </div>
+            <div class="chart-box"><canvas id="chartEvolucao" aria-label="Gráfico de evolução do saldo" role="img"></canvas></div>
+          </div>
+
+          <div class="card">
+            <div class="card__head">
+              <div>
+                <h2>Orçamento do mês</h2>
+                <p class="muted" id="orcamentoSub">Orçado × realizado por categoria</p>
+              </div>
+              <a class="link" href="#/categorias">Definir orçamentos</a>
+            </div>
+            <div id="orcamentoBox"></div>
+          </div>
+        </div>
+
+        <div class="grid grid--2">
+          <div class="card">
+            <div class="card__head">
               <h2>Últimos lançamentos</h2>
               <a class="link" href="#/lancamentos">Ver todos</a>
             </div>
@@ -263,6 +368,21 @@
             </div>
             <div class="rows" id="pendList"></div>
           </div>
+        </div>
+
+        <!-- v1.1 · melhores juros do dia (movido do topo para depois de Pendências) -->
+        <div class="card card--juros" id="cardJuros">
+          <div class="card__head">
+            <div>
+              <h2>Melhores juros de investimento · hoje</h2>
+              <p class="muted" id="jurosSub">Buscando as taxas do dia no Banco Central…</p>
+            </div>
+            <span class="pill pill--blue" id="jurosMelhor">…</span>
+          </div>
+          <ul class="juros-lista juros-lista--row" id="jurosLista">
+            <li class="muted small">Buscando as taxas do dia no Banco Central…</li>
+          </ul>
+          <div class="juros-fonte" id="jurosFonte"><span class="muted small">—</span></div>
         </div>
 
         <div class="card">
@@ -297,14 +417,27 @@
                 <option value="">Todos os tipos</option>
                 <option>Receita</option>
                 <option>Despesa</option>
-                <option>Transferência</option>
+                <option>PIX</option>
               </select>
               <select id="filtroCategoria" class="select"><option value="">Todas as categorias</option></select>
+              <select id="filtroConta" class="select"><option value="">Todas as contas</option></select>
               <select id="filtroSituacao" class="select">
                 <option value="">Todas as situações</option>
                 <option>Pago</option><option>Recebido</option><option>Pendente</option><option>Cancelado</option>
               </select>
               <button class="btn btn--soft btn--sm" id="btnLimparFiltros">Limpar</button>
+            </div>
+            <div class="toolbar__filters toolbar__filters--extra">
+              <label class="field field--inline"><span>De</span><input type="date" id="filtroDe" class="input-sm"></label>
+              <label class="field field--inline"><span>Até</span><input type="date" id="filtroAte" class="input-sm"></label>
+              <select id="filtroOrdem" class="select" aria-label="Ordenar por">
+                <option value="data-desc">Ordenar: mais recente</option>
+                <option value="data-asc">Ordenar: mais antigo</option>
+                <option value="valor-desc">Ordenar: maior valor</option>
+                <option value="valor-asc">Ordenar: menor valor</option>
+                <option value="desc-az">Ordenar: descrição A–Z</option>
+              </select>
+              <span class="muted small" id="filtroPeriodoTxt"></span>
             </div>
           </div>
 
@@ -349,8 +482,28 @@
           </div>
           <div class="card">
             <div class="card__head"><h2>Minhas categorias</h2><span class="pill" id="catCount">0</span></div>
+            <div class="toolbar">
+              <div class="toolbar__search">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+                <input type="search" id="buscaCat" placeholder="Buscar categoria por nome…">
+              </div>
+              <div class="toolbar__filters">
+                <select id="filtroCatTipo" class="select">
+                  <option value="">Todos os tipos</option>
+                  <option>Despesa</option>
+                  <option>Receita</option>
+                  <option>Ambos</option>
+                </select>
+                <button class="btn btn--soft btn--sm" id="btnLimparCat">Limpar</button>
+              </div>
+            </div>
             <div class="tags" id="tagsCategorias"></div>
           </div>
+        </div>
+
+        <div class="card">
+          <div class="card__head"><div><h2>Orçamento mensal por categoria</h2><p class="muted">Defina um limite por mês. O painel avisa quando você chega a 80% ou estoura o orçamento.</p></div></div>
+          <div id="orcamentosCfg"></div>
         </div>
       </section>
 
@@ -406,6 +559,101 @@
         </div>
       </section>
 
+      <!-- ---------------- CONTAS ---------------- -->
+      <section class="view is-hidden" id="view-contas">
+        <div class="grid grid--2">
+          <div class="card">
+            <div class="card__head"><h2 id="contaFormTitle">Nova conta</h2></div>
+            <form id="formConta" class="form-grid" novalidate>
+              <label class="field"><span>Nome da conta</span><input name="nome" placeholder="Ex.: Nubank, Itaú, Poupança…" required maxlength="40"></label>
+              <div class="row2">
+                <label class="field"><span>Banco / instituição <small class="opc">opcional</small></span><input name="banco" placeholder="Ex.: Nubank" maxlength="40"></label>
+                <label class="field"><span>Tipo</span>
+                  <select name="tipo" class="select">
+                    <option>Conta corrente</option><option>Poupança</option><option>Investimentos</option>
+                    <option>Carteira física</option><option>Cartão de crédito</option><option>Outro</option>
+                  </select>
+                </label>
+              </div>
+              <div class="row2">
+                <label class="field"><span>Saldo inicial (R$) <small class="opc">opcional</small></span><input name="saldoInicial" inputmode="decimal" class="money" placeholder="0,00"></label>
+                <label class="field"><span>Cor</span><input name="cor" type="color" value="#6366f1" class="color"></label>
+              </div>
+              <p class="muted small">O saldo da conta = saldo inicial + receitas − despesas dos lançamentos associados a ela.</p>
+              <p class="form-error is-hidden" id="formContaError"></p>
+              <div class="row2">
+                <button type="submit" class="btn btn--primary" id="btnSalvarConta">Adicionar conta</button>
+                <button type="button" class="btn btn--soft" id="btnNovaConta">Limpar formulário</button>
+              </div>
+            </form>
+          </div>
+          <div class="card">
+            <div class="card__head"><h2>Minhas contas</h2><span class="pill" id="contasCount">0</span></div>
+            <div class="contas-grid" id="contasGrid"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ---------------- METAS ---------------- -->
+      <section class="view is-hidden" id="view-metas">
+        <div class="card">
+          <div class="card__head">
+            <div><h2>Metas e caixinhas</h2><p class="muted">Reserva de emergência, viagem, carro novo… acompanhe o progresso e a previsão de conclusão.</p></div>
+            <button class="btn btn--primary btn--sm" id="btnNovaMeta">+ Nova meta</button>
+          </div>
+          <div class="metas-grid" id="metasGrid"></div>
+        </div>
+      </section>
+
+      <!-- ---------------- SIMULADORES ---------------- -->
+      <section class="view is-hidden" id="view-simuladores">
+        <div class="grid grid--2">
+          <div class="card">
+            <div class="card__head"><div><h2>Juros compostos</h2><p class="muted">Quanto terei se aportar R$ X por Y meses a Z% ao mês?</p></div></div>
+            <form id="formJuros" class="form-grid">
+              <div class="row2">
+                <label class="field"><span>Valor inicial (R$)</span><input name="inicial" inputmode="decimal" class="money" placeholder="0,00"></label>
+                <label class="field"><span>Aporte mensal (R$)</span><input name="aporte" inputmode="decimal" class="money" placeholder="0,00"></label>
+              </div>
+              <div class="row2">
+                <label class="field"><span>Taxa (% ao mês)</span><input name="taxaMes" inputmode="decimal" class="money" placeholder="0,80"></label>
+                <label class="field"><span>Ou taxa (% ao ano)</span><input name="taxaAno" inputmode="decimal" class="money" placeholder="13,65"></label>
+              </div>
+              <div class="row2">
+                <label class="field"><span>Prazo (meses)</span><input name="meses" type="number" min="1" max="1200" value="12" required></label>
+                <label class="field"><span>Tributação (IR)</span>
+                  <select name="trib" class="select">
+                    <option value="0">Sem IR (ex.: poupança, LCI/LCA)</option>
+                    <option value="22.5">IR 22,5% (até 180 dias)</option>
+                    <option value="20">IR 20% (181 a 360 dias)</option>
+                    <option value="17.5">IR 17,5% (361 a 720 dias)</option>
+                    <option value="15">IR 15% (acima de 720 dias)</option>
+                  </select>
+                </label>
+              </div>
+              <button class="btn btn--primary" type="submit">Simular juros compostos</button>
+            </form>
+            <div id="jurosResultado" class="resultado is-hidden"></div>
+          </div>
+
+          <div class="card">
+            <div class="card__head"><div><h2>Resgate vs. deixar render</h2><p class="muted">Se eu sacar R$ 500 hoje, quanto deixo de ganhar em 12 meses?</p></div></div>
+            <form id="formResgate" class="form-grid">
+              <div class="row2">
+                <label class="field"><span>Montante hoje (R$)</span><input name="montante" inputmode="decimal" class="money" placeholder="10.000,00" required></label>
+                <label class="field"><span>Valor a resgatar (R$)</span><input name="resgate" inputmode="decimal" class="money" placeholder="500,00" required></label>
+              </div>
+              <div class="row2">
+                <label class="field"><span>Taxa (% ao ano)</span><input name="taxaAno" inputmode="decimal" class="money" placeholder="13,65" required></label>
+                <label class="field"><span>Prazo (meses)</span><input name="meses" type="number" min="1" max="1200" value="12" required></label>
+              </div>
+              <button class="btn btn--primary" type="submit">Comparar cenários</button>
+            </form>
+            <div id="resgateResultado" class="resultado is-hidden"></div>
+          </div>
+        </div>
+      </section>
+
       <!-- ---------------- CONFIGURAÇÕES ---------------- -->
       <section class="view is-hidden" id="view-config">
         <div class="grid grid--2">
@@ -452,6 +700,24 @@
             </div>
           </div>
         </div>
+
+        <div class="card">
+          <div class="card__head"><div><h2>Glossário e dicas rápidas</h2><p class="muted">Termos comuns de investimentos e finanças pessoais.</p></div></div>
+          <div class="glossario">
+            <details><summary>Selic</summary><p>Taxa básica de juros do Brasil, definida pelo Copom. Serve de referência para quase todos os juros da economia. Quando a Selic sobe, poupança, CDB e financiamentos tendem a subir junto.</p></details>
+            <details><summary>CDI</summary><p>Taxa média dos empréstimos entre bancos, muito próxima da Selic. A maioria dos CDBs e LCIs paga “100% do CDI” — ou seja, rende mais ou menos a taxa Selic.</p></details>
+            <details><summary>IPCA</summary><p>Índice oficial de inflação do país. Serve para calcular o rendimento real: quanto você de fato ganhou acima da inflação.</p></details>
+            <details><summary>TR</summary><p>Taxa de correção da poupança. Hoje está em 0%, por isso a poupança rende apenas a taxa fixa de 0,5% ao mês.</p></details>
+            <details><summary>Rendimento real vs. nominal</summary><p>Nominal é o percentual que o investimento paga. Real é o que sobra depois de descontar a inflação (e o IR). Ex.: 13% a.a. com 5% de inflação ≈ 7,6% reais.</p></details>
+            <details><summary>Juros compostos</summary><p>Juros sobre juros: cada mês os rendimentos entram no cálculo do mês seguinte. Quanto maior o prazo, maior o efeito — por isso tempo importa mais que valor em investimentos longos.</p></details>
+            <details><summary>Liquidez</summary><p>Facilidade para sacar sem perder rendimento. Liquidez diária (CDB diário, Tesouro Selic) = pode sacar a qualquer momento; liquidez no vencimento trava o dinheiro até a data.</p></details>
+            <details><summary>Isentos de IR: LCI, LCA e poupança</summary><p>Letras de Crédito Imobiliário/Fundo (LCI/LCA) não pagam Imposto de Renda — por isso um LCI a 90% do CDI pode render quase o mesmo que um CDB a 100%. Poupança também é isenta, mas rende pouco.</p></details>
+            <details><summary>IR regressivo (CDB, RDB, Tesouro)</summary><p>Quanto mais tempo investido, menor a alíquota: 22,5% até 180 dias, 20% até 360, 17,5% até 720 e 15% acima de 720 dias. Resgate antecipado penaliza.</p></details>
+            <details><summary>Preço médio</summary><p>Custo médio de suas unidades de um ativo (total investido ÷ quantidade). É a base para calcular ganho de capital em ações, FIIs e cripto.</p></details>
+            <details><summary>Regra 50/30/20</summary><p>Referência simples de orçamento: até 50% para essenciais (moradia, comida), 30% para desejos e 20% para poupança e investimentos. Ajuste aos seus objetivos.</p></details>
+            <details><summary>Reserva de emergência</summary><p>Valor para imprevistos (3 a 12 meses de custo), guardado em investimento de liquidez diária. A meta ideal é tê-la antes de investir em algo arriscado.</p></details>
+          </div>
+        </div>
       </section>
 
     </main>
@@ -462,14 +728,14 @@
 <div class="modal" id="modalLanc" aria-hidden="true">
   <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal__head">
-      <h3 id="modalTitle">Novo lançamento</h2>
+      <h3 id="modalTitle">Novo lançamento</h3>
       <button class="icon-btn" data-close aria-label="Fechar">✕</button>
     </div>
     <form id="formLanc" class="modal__body form-grid" novalidate>
       <div class="seg seg--tipo" id="segTipo">
         <button type="button" class="seg__b is-active" data-tipo="Despesa">Despesa</button>
         <button type="button" class="seg__b" data-tipo="Receita">Receita</button>
-        <button type="button" class="seg__b" data-tipo="Transferência">Transferência</button>
+        <button type="button" class="seg__b" data-tipo="PIX">PIX</button>
       </div>
       <div class="row2">
         <label class="field"><span>Valor (R$)</span>
@@ -483,9 +749,18 @@
           <select name="situacao" class="select">
             <option>Pendente</option><option>Pago</option><option>Recebido</option><option>Cancelado</option>
           </select>
+          <small class="field__help is-hidden" id="sitHint">PIX: <b>“Recebido”</b> conta como receita · <b>“Pago”</b> conta como despesa · <b>“Pendente”</b> fica só nas pendências.</small>
         </label>
       </div>
+      <div class="row2">
+        <label class="field"><span>Conta</span><select name="conta" class="select"></select></label>
+        <div class="field field--static">
+          <span>&nbsp;</span>
+          <label class="check"><input type="checkbox" name="recorrente"><span>Repetir todo mês (recorrente)</span></label>
+        </div>
+      </div>
       <label class="field"><span>Descrição</span><input name="descricao" placeholder="Ex.: Supermercado, Salário, Aluguel…" required maxlength="80"></label>
+      <div id="sugestaoCat" class="sugestao is-hidden"></div>
       <label class="field"><span>Observações <small class="opc">opcional</small></span><textarea name="observacoes" rows="2" maxlength="200" placeholder="Anotações, parcela, conta…"></textarea></label>
       <p class="form-error is-hidden" id="formLancError"></p>
       <div class="modal__foot">
@@ -496,10 +771,49 @@
   </div>
 </div>
 
+<!-- ============================ MODAL META ============================ -->
+<div class="modal" id="modalMeta" aria-hidden="true">
+  <div class="modal__dialog modal__dialog--sm" role="dialog" aria-modal="true" aria-labelledby="metaTitle">
+    <div class="modal__head"><h3 id="metaTitle">Nova meta</h3><button class="icon-btn" data-close aria-label="Fechar">✕</button></div>
+    <form id="formMeta" class="modal__body form-grid" novalidate>
+      <label class="field"><span>Nome da meta</span><input name="nome" placeholder="Ex.: Reserva de emergência" required maxlength="50"></label>
+      <div class="row2">
+        <label class="field"><span>Valor alvo (R$)</span><input name="alvo" inputmode="decimal" class="money" placeholder="20.000,00" required></label>
+        <label class="field"><span>Prazo <small class="opc">opcional</small></span><input name="prazo" type="month"></label>
+      </div>
+      <div class="row2">
+        <label class="field"><span>Aporte mensal (R$) <small class="opc">opcional</small></span><input name="aporte" inputmode="decimal" class="money" placeholder="0,00"></label>
+        <label class="field"><span>Cor</span><input name="cor" type="color" value="#6366f1" class="color"></label>
+      </div>
+      <p class="form-error is-hidden" id="formMetaError"></p>
+      <div class="modal__foot">
+        <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn btn--primary" id="btnSalvarMeta">Salvar meta</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================ MODAL APORTAR ============================ -->
+<div class="modal" id="modalAporte" aria-hidden="true">
+  <div class="modal__dialog modal__dialog--sm" role="dialog" aria-modal="true">
+    <div class="modal__head"><h3 id="aporteTitle">Registrar aporte</h3><button class="icon-btn" data-close aria-label="Fechar">✕</button></div>
+    <form id="formAporte" class="modal__body form-grid" novalidate>
+      <label class="field"><span>Valor do aporte (R$)</span><input name="valor" inputmode="decimal" class="money" placeholder="0,00" required></label>
+      <p class="muted small">O aporte é registrado apenas na meta (não cria lançamento no caixa).</p>
+      <p class="form-error is-hidden" id="formAporteError"></p>
+      <div class="modal__foot">
+        <button type="button" class="btn btn--ghost" data-close>Cancelar</button>
+        <button type="submit" class="btn btn--primary">Aportar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 <!-- ============================ CONFIRMAÇÃO ============================ -->
 <div class="modal" id="modalConfirm" aria-hidden="true">
   <div class="modal__dialog modal__dialog--sm" role="dialog" aria-modal="true">
-    <div class="modal__head"><h3 id="confirmTitle">Confirmar</h2><button class="icon-btn" data-close aria-label="Fechar">✕</button></div>
+    <div class="modal__head"><h3 id="confirmTitle">Confirmar</h3><button class="icon-btn" data-close aria-label="Fechar">✕</button></div>
     <div class="modal__body">
       <p id="confirmMsg">Tem certeza?</p>
       <div class="modal__foot">

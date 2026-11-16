@@ -296,7 +296,7 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
 .welcome__acts{display:flex;gap:9px;flex-wrap:wrap;flex:0 0 auto}
 
 /* KPIs */
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
 .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
   padding:18px;box-shadow:var(--shadow);position:relative;overflow:hidden}
 .kpi::after{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--brand)}
@@ -498,3 +498,125 @@ select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='ht
   .kpis{grid-template-columns:1fr}
   .auth__card{padding:22px 18px}
 }
+
+/* =========================================================
+   v1.1 · card de juros, novos filtros, métricas e PIX
+   ========================================================= */
+.seg--tipo .seg__b.is-active[data-tipo="PIX"]{color:var(--blue)}
+.badge--PIX{background:var(--blue-soft);color:var(--blue)}
+
+/* card · melhores juros do dia (v1.1: fica depois de Pendências) */
+.card--juros .pill--blue{font-size:15px;font-weight:800;padding:7px 15px;white-space:nowrap}
+.juros-lista{list-style:none;margin:11px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
+.juros-lista--row{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:9px;margin:0}
+.juros-lista li{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  font-size:13px;padding:7px 10px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px}
+.juros-lista li em{font-style:normal;color:var(--muted);font-size:11px}
+.juros-lista b{font-size:14px;font-weight:800;color:var(--green);white-space:nowrap}
+.juros__nome{display:flex;flex-direction:column;gap:1px;line-height:1.25}
+.juros__nome small{font-size:11px;color:var(--muted)}
+.kpi--juros .kpi__foot{display:block;margin-top:9px;line-height:1.45}
+
+/* filtros extras de lançamentos (período + ordenação) */
+.toolbar__filters--extra{flex-basis:100%;width:100%;padding-top:2px;border-top:1px dashed var(--border)}
+.field--inline{flex-direction:row;align-items:center;gap:8px;font-size:12.5px;color:var(--muted);font-weight:600}
+.input-sm{font-family:inherit;font-size:13.5px;color:var(--text);background:var(--surface-2);
+  border:1px solid var(--border);border-radius:10px;padding:8px 10px;min-width:150px;transition:border-color .15s}
+.input-sm:focus{outline:none;border-color:var(--blue)}
+
+/* card · ritmo do mês */
+.metrica{display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 0;border-bottom:1px dashed var(--border)}
+.metrica:last-child{border-bottom:none}
+.metrica span{display:flex;flex-direction:column;gap:1px;font-size:13.5px;color:var(--muted)}
+.metrica span small{font-size:11.5px;opacity:.85}
+.metrica b{font-size:15px;font-weight:800;text-align:right}
+.metrica .tag{font-size:12px}
+
+/* =========================================================
+   v1.2 — contas/carteiras, metas, orçamento, simuladores,
+   sugestão de categoria, glossário
+   ========================================================= */
+
+/* KPI consolidado */
+.kpi--purple::after{background:var(--purple)}
+.kpi--purple .kpi__ico{background:var(--purple-soft)}
+
+/* formulário do lançamento: check "repetir todo mês" */
+.field--static{display:flex;flex-direction:column;gap:6px}
+.field--static>span{font-size:12.5px;font-weight:700;color:var(--muted)}
+
+/* sugestão automática de categoria */
+.sugestao{margin-top:-4px;font-size:13px;color:var(--text-2);background:var(--purple-soft);
+  border:1px dashed var(--purple);border-radius:10px;padding:8px 12px;animation:fadeUp .18s ease}
+.sug-btn{border:1px solid var(--purple);background:var(--surface);color:var(--purple);
+  border-radius:8px;padding:3px 10px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer;margin-left:6px;
+  transition:transform .12s,box-shadow .12s}
+.sug-btn:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
+
+/* contas e carteiras */
+.contas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.conta{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:16px;
+  display:flex;flex-direction:column;gap:8px;position:relative}
+.conta__top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.conta__nome{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:14.5px}
+.conta__nome i{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.conta__saldo{font-size:21px;font-weight:800;letter-spacing:-.02em}
+.conta__saldo.neg{color:var(--red)}.conta__saldo.pos{color:var(--green)}
+.conta__acoes{display:flex;gap:6px;margin-top:2px}
+.conta--total{background:var(--brand-soft);border-color:var(--brand);grid-column:1/-1}
+
+/* metas / caixinhas */
+.metas-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.meta{background:var(--surface-2);border:1px solid var(--border);border-radius:14px;padding:16px;
+  display:flex;flex-direction:column;gap:10px}
+.meta__top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.meta__top strong{display:inline-flex;align-items:center;gap:8px;font-size:14.5px}
+.meta__top strong i{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.meta__pct{font-weight:800;font-size:15px;color:var(--text-2)}
+.meta__pct.pos{color:var(--green)}
+.meta__bar{height:10px;border-radius:99px;background:var(--surface-3);overflow:hidden}
+.meta__fill{height:100%;border-radius:99px;background:var(--brand);transition:width .35s ease}
+
+/* orçamento (painel) */
+.orc{padding:10px 0;border-bottom:1px dashed var(--border)}
+.orc:last-child{border-bottom:none}
+.orc__top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:7px;font-size:13.5px}
+.orc__top span:first-child{display:inline-flex;align-items:center;gap:8px;font-weight:700}
+.orc__top i{width:9px;height:9px;border-radius:50%}
+.orc__val{color:var(--muted);font-size:12.5px}
+.orc__val.strong{color:var(--text-2)}
+.orc__val.orc--warn{color:var(--amber)}
+.orc__val.orc--over{color:var(--red)}
+.orc__bar{height:10px;border-radius:99px;background:var(--surface-3);overflow:hidden}
+.orc__fill{height:100%;border-radius:99px;transition:width .35s ease}
+.orc__fill.orc--ok{background:var(--green)}
+.orc__fill.orc--warn{background:var(--amber)}
+.orc__fill.orc--over{background:var(--red)}
+
+/* orçamento (configuração em Categorias) */
+.orc-cfg{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+.orc-cfg__row{display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:13.5px}
+.orc-cfg__row span{display:inline-flex;align-items:center;gap:8px;font-weight:700}
+.orc-cfg__row i{width:9px;height:9px;border-radius:50%}
+.orc-cfg__input{display:inline-flex;align-items:center;gap:5px;color:var(--muted);font-size:12.5px}
+.orc-cfg__input .input-sm{min-width:110px;text-align:right}
+
+/* simuladores */
+.resultado{margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);animation:fadeUp .22s ease}
+.sim-res{display:flex;flex-direction:column;gap:3px;align-items:flex-start;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:14px}
+.sim-res__big{font-size:clamp(20px,2vw,26px);font-weight:800;letter-spacing:-.02em}
+.sim-res__big.pos{color:var(--green)}.sim-res__big.neg{color:var(--red)}
+.sim-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:12px 0}
+.sim-grid>div{display:flex;flex-direction:column;gap:2px}
+.sim-grid strong{font-size:15px}
+
+/* glossário */
+.glossario{display:flex;flex-direction:column;gap:8px}
+.glossario details{background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:11px 14px}
+.glossario summary{font-weight:800;font-size:14px;cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.glossario summary::after{content:"+";font-size:17px;color:var(--muted);transition:transform .18s}
+.glossario details[open] summary::after{transform:rotate(45deg)}
+.glossario p{margin-top:8px;font-size:13.5px;color:var(--text-2);line-height:1.6}
